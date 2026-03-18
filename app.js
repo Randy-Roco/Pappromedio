@@ -109,6 +109,7 @@ function bindEvents() {
   document.getElementById('btnExportIgnoredCsv').addEventListener('click', exportIgnoredCsv);
   document.getElementById('btnExportGeoJSON').addEventListener('click', exportGeoJSON);
   document.getElementById('btnExportSHP').addEventListener('click', exportSHP);
+  document.getElementById('btnToggleAliases').addEventListener('click', toggleAliasPanel);
 }
 
 async function handleFiles(fileList) {
@@ -535,6 +536,13 @@ function getPrjWKT(epsg) {
 function toggleIgnoredPanel() {
   const panel = document.getElementById('ignoredPanel');
   panel.hidden = !panel.hidden;
+}
+
+function toggleAliasPanel() {
+  const panel = document.getElementById('aliasPanel');
+  const btn = document.getElementById('btnToggleAliases');
+  panel.hidden = !panel.hidden;
+  btn.textContent = panel.hidden ? 'Mostrar aliases' : 'Ocultar aliases';
 }
 
 function downloadFile(filename, content, mime) {
