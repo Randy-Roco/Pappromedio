@@ -61,26 +61,9 @@
         </div>
       </section>
 
-      <section class="card">
-        <div class="card-title-row">
-          <h2>2. Aliases de descriptores</h2>
-          <button class="ghost-btn" id="btnAddAlias">Agregar alias</button>
-        </div>
-        <p class="section-copy">
-          Úsalo para agrupar variantes digitadas por operador. Ejemplo: <code>PA001</code> → <code>PA01</code>.
-        </p>
-
-        <div class="alias-grid" id="aliasGrid"></div>
-
-        <div class="row-actions">
-          <button class="secondary-btn" id="btnLoadAliasExample">Cargar ejemplo</button>
-          <button class="secondary-btn" id="btnApply">Procesar y promediar</button>
-        </div>
-      </section>
-
       <section class="card full-span">
         <div class="card-title-row wrap">
-          <h2>3. Resultados promediados</h2>
+          <h2>2. Resultados promediados</h2>
           <div class="toolbar">
             <label>
               Perfil de salida
@@ -102,6 +85,7 @@
               </select>
             </label>
 
+            <button class="secondary-btn" id="btnToggleAliases">Mostrar aliases</button>
             <button class="primary-btn" id="btnExportExcel">Exportar Excel</button>
             <button class="primary-btn" id="btnExportTxt">Exportar TXT</button>
             <button class="primary-btn" id="btnExportGeoJSON">Exportar GeoJSON</button>
@@ -118,6 +102,25 @@
           <div class="summary-box"><span>Registros PA</span><strong id="sumRows">0</strong></div>
           <div class="summary-box"><span>PA promediados</span><strong id="sumGroups">0</strong></div>
           <div class="summary-box"><span>No utilizados</span><strong id="sumIgnored">0</strong></div>
+        </div>
+
+        <div id="aliasPanel" class="subpanel" hidden>
+          <div class="subpanel-header">
+            <div>
+              <h3>Aliases de descriptores</h3>
+              <p>
+                Agrupa variantes digitadas por operador. Ejemplo:
+                <code>PA001</code> → <code>PA01</code>
+              </p>
+            </div>
+            <div class="toolbar">
+              <button class="ghost-btn" id="btnAddAlias">Agregar alias</button>
+              <button class="ghost-btn" id="btnLoadAliasExample">Cargar ejemplo</button>
+              <button class="secondary-btn" id="btnApply">Procesar y promediar</button>
+            </div>
+          </div>
+
+          <div class="alias-grid" id="aliasGrid"></div>
         </div>
 
         <div class="table-wrap">
@@ -141,7 +144,7 @@
 
       <section class="card full-span">
         <div class="card-title-row wrap">
-          <h2>4. Registros no utilizados</h2>
+          <h2>3. Registros no utilizados</h2>
           <div class="toolbar">
             <button class="secondary-btn" id="btnToggleIgnored">Mostrar / ocultar</button>
             <button class="secondary-btn" id="btnExportIgnoredCsv">Exportar CSV</button>
