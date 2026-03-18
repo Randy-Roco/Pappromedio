@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromedioPApp Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <span class="eyebrow">Geomensura · Topografía · Fotogrametría</span>
+        <h1>PromedioPApp Web</h1>
+        <p class="hero-copy">
+          Carga archivos de terreno, agrupa puntos de apoyo, normaliza descriptores,
+          promedia coordenadas X/Y/Z y exporta en formatos listos para Civil 3D o ERDAS.
+        </p>
+      </div>
+      <div class="hero-badge">Listo para Vercel</div>
+    </header>
+
+    <main class="grid">
+      <section class="card card-drop">
+        <div class="card-title-row">
+          <h2>1. Cargar archivos</h2>
+          <button class="ghost-btn" id="btnClearFiles">Limpiar</button>
+        </div>
+
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".txt" multiple hidden>
+          <div class="dropzone-inner">
+            <div class="drop-icon">⬆</div>
+            <strong>Arrastra tus .txt aquí</strong>
+            <span>o haz clic para seleccionar uno o varios archivos</span>
+          </div>
+        </label>
+
+        <div class="hint">
+          Formato esperado: <code>ID,Y,X,Z,DESCRIPTOR</code>
+        </div>
+
+        <div class="file-list-wrap">
+          <table class="table compact" id="filesTable">
+            <thead>
+              <tr>
+                <th>Archivo</th>
+                <th>Registros</th>
+                <th>PA detectados</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3" class="empty">Aún no hay archivos cargados.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2>2. Aliases de descriptores</h2>
+          <button class="ghost-btn" id="btnAddAlias">Agregar alias</button>
+        </div>
+        <p class="section-copy">
+          Úsalo para agrupar variantes digitadas por operador. Ejemplo: <code>PA001</code> → <code>PA01</code>.
+        </p>
+
+        <div class="alias-grid" id="aliasGrid"></div>
+
+        <div class="row-actions">
+          <button class="secondary-btn" id="btnLoadAliasExample">Cargar ejemplo</button>
+          <button class="secondary-btn" id="btnApply">Procesar y promediar</button>
+        </div>
+      </section>
+
+      <section class="card full-span">
+        <div class="card-title-row wrap">
+          <h2>3. Resultados promediados</h2>
+          <div class="toolbar">
+            <label>
+              Perfil de salida
+              <select id="exportProfile">
+                <option value="civil3d">Civil 3D (UTF-8)</option>
+                <option value="erdas">ERDAS</option>
+              </select>
+            </label>
+            <button class="primary-btn" id="btnExportExcel">Exportar Excel</button>
+            <button class="primary-btn" id="btnExportTxt">Exportar TXT</button>
+          </div>
+        </div>
+        <p class="section-copy">
+          Puedes editar directamente la tabla antes de exportar. Los promedios se calculan por descriptor final.
+        </p>
+
+        <div class="summary-strip" id="summaryStrip">
+          <div class="summary-box"><span>Archivos</span><strong id="sumFiles">0</strong></div>
+          <div class="summary-box"><span>Registros PA</span><strong id="sumRows">0</strong></div>
+          <div class="summary-box"><span>PA promediados</span><strong id="sumGroups">0</strong></div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="resultTable">
+            <thead>
+              <tr>
+                <th>Descriptor</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Z</th>
+                <th>N° Obs.</th>
+                <th>Origen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" class="empty">Procesa archivos para ver resultados.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="aliasRowTemplate">
+    <div class="alias-row">
+      <input type="text" class="alias-from" placeholder="Alias (ej: PA001)" />
+      <span>→</span>
+      <input type="text" class="alias-to" placeholder="Destino (ej: PA01)" />
+      <button class="danger-btn alias-remove" type="button">✕</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
