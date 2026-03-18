@@ -18,7 +18,8 @@
         <h1>PromedioPApp Web</h1>
         <p class="hero-copy">
           Carga archivos de terreno, agrupa puntos de apoyo, normaliza descriptores,
-          promedia coordenadas X/Y/Z y exporta en formatos listos para Civil 3D o ERDAS.
+          promedia coordenadas X/Y/Z y exporta en formatos listos para Civil 3D, ERDAS,
+          Pix4D, ArcGIS y Agisoft Metashape.
         </p>
       </div>
       <div class="hero-badge">Listo para Vercel</div>
@@ -85,13 +86,29 @@
               Perfil de salida
               <select id="exportProfile">
                 <option value="civil3d">Civil 3D (UTF-8)</option>
+                <option value="pix4d">Pix4D</option>
+                <option value="arcgispro">ArcGIS Pro</option>
+                <option value="arcmap">ArcMap</option>
                 <option value="erdas">ERDAS</option>
+                <option value="metashape">Agisoft Metashape</option>
               </select>
             </label>
+
+            <label>
+              EPSG
+              <select id="epsgSelect">
+                <option value="EPSG:32719" selected>EPSG:32719</option>
+                <option value="EPSG:32718">EPSG:32718</option>
+              </select>
+            </label>
+
             <button class="primary-btn" id="btnExportExcel">Exportar Excel</button>
             <button class="primary-btn" id="btnExportTxt">Exportar TXT</button>
+            <button class="primary-btn" id="btnExportGeoJSON">Exportar GeoJSON</button>
+            <button class="primary-btn" id="btnExportSHP">Exportar SHP</button>
           </div>
         </div>
+
         <p class="section-copy">
           Puedes editar directamente la tabla antes de exportar. Los promedios se calculan por descriptor final.
         </p>
@@ -100,6 +117,7 @@
           <div class="summary-box"><span>Archivos</span><strong id="sumFiles">0</strong></div>
           <div class="summary-box"><span>Registros PA</span><strong id="sumRows">0</strong></div>
           <div class="summary-box"><span>PA promediados</span><strong id="sumGroups">0</strong></div>
+          <div class="summary-box"><span>No utilizados</span><strong id="sumIgnored">0</strong></div>
         </div>
 
         <div class="table-wrap">
@@ -120,6 +138,40 @@
           </table>
         </div>
       </section>
+
+      <section class="card full-span">
+        <div class="card-title-row wrap">
+          <h2>4. Registros no utilizados</h2>
+          <div class="toolbar">
+            <button class="secondary-btn" id="btnToggleIgnored">Mostrar / ocultar</button>
+            <button class="secondary-btn" id="btnExportIgnoredCsv">Exportar CSV</button>
+          </div>
+        </div>
+
+        <p class="section-copy">
+          Aquí puedes revisar descriptores no utilizados, líneas sin descriptor, coordenadas inválidas
+          o registros que no correspondan a puntos PA.
+        </p>
+
+        <div id="ignoredPanel" hidden>
+          <div class="table-wrap">
+            <table class="table" id="ignoredTable">
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Línea</th>
+                  <th>Descriptor original</th>
+                  <th>Motivo</th>
+                  <th>Contenido</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" class="empty">No hay registros no utilizados.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -132,6 +184,7 @@
     </div>
   </template>
 
+  <script src="https://unpkg.com/shp-write@0.3.2/shpwrite.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
