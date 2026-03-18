@@ -10,42 +10,64 @@ const EXPORT_PROFILES = {
     label: 'Civil 3D (UTF-8)',
     filename: 'PA_PROMEDIADOS_CIVIL3D.txt',
     build(rows) {
+      // 🔥 SIN encabezado (clave)
       return rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`).join('\n');
     },
   },
+
   pix4d: {
     label: 'Pix4D',
     filename: 'PA_PROMEDIADOS_PIX4D.txt',
     build(rows) {
-      return rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`).join('\n');
+      // ✔ Con encabezado
+      return [
+        'Y,X,Z,DESCRIPTOR',
+        ...rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
+      ].join('\n');
     },
   },
+
   arcgispro: {
     label: 'ArcGIS Pro',
     filename: 'PA_PROMEDIADOS_ARCGISPRO.txt',
     build(rows) {
-      return rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`).join('\n');
+      return [
+        'Y,X,Z,DESCRIPTOR',
+        ...rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
+      ].join('\n');
     },
   },
+
   arcmap: {
     label: 'ArcMap',
     filename: 'PA_PROMEDIADOS_ARCMAP.txt',
     build(rows) {
-      return rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`).join('\n');
+      return [
+        'Y,X,Z,DESCRIPTOR',
+        ...rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
+      ].join('\n');
     },
   },
+
   erdas: {
     label: 'ERDAS',
     filename: 'PA_PROMEDIADOS_ERDAS.txt',
     build(rows) {
-      return ['P,Y,X,Z,DESC', ...rows.map(r => `P,${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)].join('\n');
+      return [
+        'P,Y,X,Z,DESC',
+        ...rows.map(r => `P,${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
+      ].join('\n');
     },
   },
+
   metashape: {
     label: 'Agisoft Metashape',
     filename: 'PA_PROMEDIADOS_METASHAPE.txt',
     build(rows) {
-      return ['P,Y,X,Z,DESC', ...rows.map(r => `P,${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)].join('\n');
+      return [
+        'P,Y,X,Z,DESC',
+        ...rows.map(r => `P,${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
+      ].join('\n');
     },
   },
 };
