@@ -10,7 +10,6 @@ const EXPORT_PROFILES = {
     label: 'Civil 3D (UTF-8)',
     filename: 'PA_PROMEDIADOS_CIVIL3D.txt',
     build(rows) {
-      // 🔥 SIN encabezado (clave)
       return rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`).join('\n');
     },
   },
@@ -19,7 +18,6 @@ const EXPORT_PROFILES = {
     label: 'Pix4D',
     filename: 'PA_PROMEDIADOS_PIX4D.txt',
     build(rows) {
-      // ✔ Con encabezado
       return [
         'Y,X,Z,DESCRIPTOR',
         ...rows.map(r => `${fmt(r.Y)},${fmt(r.X)},${fmt(r.Z)},${r.descriptor}`)
@@ -276,14 +274,34 @@ function processData() {
   }
 
   state.groupedRows = [...groups.entries()]
-    .map(([descriptor, rows]) => ({
-      descriptor,
-      X: avg(rows.map(r => r.X)),
-      Y: avg(rows.map(r => r.Y)),
-      Z: avg(rows.map(r => r.Z)),
-      count: rows.length,
-      origen: [...new Set(rows.map(r => r.filename))].join(' | '),
-    }))
+    .map(([descriptor, rows]) => {
+      const xs = rows.map(r => r.X);
+      const ys = rows.map(r => r.Y);
+      const zs = rows.map(r => r.Z);
+
+      const rangoX = max(xs) - min(xs);
+      const rangoY = max(ys) - min(ys);
+      const rangoZ = max(zs) - min(zs);
+      const maxRango = Math.max(rangoX, rangoY, rangoZ);
+      const hasLargeSpread = maxRango > 1.0;
+
+      return {
+        descriptor,
+        X: avg(xs),
+        Y: avg(ys),
+        Z: avg(zs),
+        count: rows.length,
+        origen: [...new Set(rows.map(r => r.filename))].join(' | '),
+        rangoX,
+        rangoY,
+        rangoZ,
+        maxRango,
+        hasLargeSpread,
+        alerta: hasLargeSpread
+          ? `Existe mucho margen en el PA (Δmáx: ${fmt(maxRango)} m)`
+          : '',
+      };
+    })
     .sort((a, b) => a.descriptor.localeCompare(b.descriptor, undefined, { numeric: true }));
 
   renderResults();
@@ -292,6 +310,14 @@ function processData() {
 
 function avg(values) {
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function min(values) {
+  return Math.min(...values);
+}
+
+function max(values) {
+  return Math.max(...values);
 }
 
 function renderFiles() {
@@ -309,16 +335,23 @@ function renderFiles() {
 
 function renderResults() {
   if (!state.groupedRows.length) {
-    resultTableBody.innerHTML = '<tr><td colspan="6" class="empty">No hay resultados todavía.</td></tr>';
+    resultTableBody.innerHTML = '<tr><td colspan="7" class="empty">No hay resultados todavía.</td></tr>';
   } else {
     resultTableBody.innerHTML = state.groupedRows.map((row, index) => `
-      <tr data-index="${index}">
+      <tr data-index="${index}" class="${row.hasLargeSpread ? 'row-alert' : ''}">
         <td><input value="${escapeAttr(row.descriptor)}" data-field="descriptor"></td>
         <td><input value="${fmt(row.X)}" data-field="X"></td>
         <td><input value="${fmt(row.Y)}" data-field="Y"></td>
         <td><input value="${fmt(row.Z)}" data-field="Z"></td>
         <td>${row.count}</td>
         <td>${escapeHtml(row.origen)}</td>
+        <td>
+          ${
+            row.hasLargeSpread
+              ? `<span class="alert-badge" title="Rango X: ${fmt(row.rangoX)} m | Rango Y: ${fmt(row.rangoY)} m | Rango Z: ${fmt(row.rangoZ)} m">${escapeHtml(row.alerta)}</span>`
+              : '<span class="ok-badge">OK</span>'
+          }
+        </td>
       </tr>
     `).join('');
 
@@ -421,6 +454,11 @@ function exportExcel() {
     Z: r.Z,
     Observaciones: r.count,
     Origen: r.origen,
+    RangoX: r.rangoX ?? 0,
+    RangoY: r.rangoY ?? 0,
+    RangoZ: r.rangoZ ?? 0,
+    DeltaMax: r.maxRango ?? 0,
+    Control: r.hasLargeSpread ? r.alerta : 'OK',
   }));
 
   const detalle = state.parsedRows.map(r => ({
@@ -496,6 +534,11 @@ function exportGeoJSON() {
         z: Number(r.Z),
         observ: Number(r.count),
         origen: r.origen,
+        rango_x: Number(r.rangoX ?? 0),
+        rango_y: Number(r.rangoY ?? 0),
+        rango_z: Number(r.rangoZ ?? 0),
+        delta_max: Number(r.maxRango ?? 0),
+        control: r.hasLargeSpread ? r.alerta : 'OK',
       },
       geometry: {
         type: 'Point',
@@ -528,6 +571,10 @@ function exportSHP() {
         descriptor: r.descriptor,
         z: Number(r.Z),
         observ: Number(r.count),
+        rango_x: Number(r.rangoX ?? 0),
+        rango_y: Number(r.rangoY ?? 0),
+        rango_z: Number(r.rangoZ ?? 0),
+        delta_max: Number(r.maxRango ?? 0),
       },
       geometry: {
         type: 'Point',
