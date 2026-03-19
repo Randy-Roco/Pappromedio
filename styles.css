@@ -109,16 +109,6 @@ body {
   color: rgba(246, 251, 252, 0.72);
 }
 
-.hero-badge {
-  white-space: nowrap;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  font-weight: 700;
-  backdrop-filter: blur(10px);
-}
-
 .grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -352,7 +342,7 @@ button:hover {
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px;
+  min-width: 980px;
 }
 
 .table.compact {
@@ -377,6 +367,38 @@ button:hover {
 
 .table tbody tr:hover {
   background: rgba(102, 165, 173, 0.06);
+}
+
+.row-alert {
+  background: rgba(118, 54, 38, 0.10) !important;
+}
+
+.row-alert:hover {
+  background: rgba(118, 54, 38, 0.16) !important;
+}
+
+.alert-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  background: linear-gradient(135deg, #763626, #9d4630);
+  box-shadow: 0 4px 14px rgba(118, 54, 38, 0.22);
+}
+
+.ok-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--success);
+  background: rgba(30, 124, 99, 0.10);
+  border: 1px solid rgba(30, 124, 99, 0.18);
 }
 
 .empty {
