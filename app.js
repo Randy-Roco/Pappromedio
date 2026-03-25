@@ -70,19 +70,6 @@ const EXPORT_PROFILES = {
   },
 };
 
-const fileInput = document.getElementById('fileInput');
-const dropzone = document.getElementById('dropzone');
-const filesTableBody = document.querySelector('#filesTable tbody');
-const aliasGrid = document.getElementById('aliasGrid');
-const aliasTemplate = document.getElementById('aliasRowTemplate');
-const resultTableBody = document.querySelector('#resultTable tbody');
-const ignoredTableBody = document.querySelector('#ignoredTable tbody');
-
-const sumFiles = document.getElementById('sumFiles');
-const sumRows = document.getElementById('sumRows');
-const sumGroups = document.getElementById('sumGroups');
-const sumIgnored = document.getElementById('sumIgnored');
-
 document.addEventListener('DOMContentLoaded', () => {
   boot();
 });
@@ -101,6 +88,9 @@ function safeBind(id, event, handler) {
 }
 
 function bindEvents() {
+  const fileInput = document.getElementById('fileInput');
+  const dropzone = document.getElementById('dropzone');
+
   if (dropzone && fileInput) {
     dropzone.addEventListener('click', () => fileInput.click());
 
@@ -124,7 +114,8 @@ function bindEvents() {
     });
 
     dropzone.addEventListener('drop', async (e) => {
-      await handleFiles([...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.txt')));
+      const files = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.txt'));
+      await handleFiles(files);
     });
   }
 
@@ -138,7 +129,7 @@ function bindEvents() {
   safeBind('btnExportIgnoredCsv', 'click', exportIgnoredCsv);
   safeBind('btnExportGeoJSON', 'click', exportGeoJSON);
   safeBind('btnExportSHP', 'click', exportSHP);
-  safeBind('btnToggleAliases', 'click', toggleAliasPanel);
+  safeBind('btnToggleAtributos', 'click', toggleAliasPanel);
 }
 
 async function handleFiles(fileList) {
@@ -236,18 +227,22 @@ function normalizeDescriptor(value) {
 }
 
 function toNumber(value) {
-  const normalized = String(value).replace(',', '.');
-  return Number(normalized);
+  return Number(String(value).replace(',', '.'));
 }
 
 function collectAliases() {
+  const aliasGrid = document.getElementById('aliasGrid');
+  if (!aliasGrid) return {};
+
   const rows = [...aliasGrid.querySelectorAll('.alias-row')];
   const aliases = {};
+
   for (const row of rows) {
     const from = normalizeDescriptor(row.querySelector('.alias-from').value);
     const to = normalizeDescriptor(row.querySelector('.alias-to').value);
     if (from && to) aliases[from] = to;
   }
+
   return aliases;
 }
 
@@ -330,6 +325,7 @@ function max(values) {
 }
 
 function renderFiles() {
+  const filesTableBody = document.querySelector('#filesTable tbody');
   if (!filesTableBody) return;
 
   if (!state.files.length) {
@@ -345,6 +341,7 @@ function renderFiles() {
 }
 
 function renderResults() {
+  const resultTableBody = document.querySelector('#resultTable tbody');
   if (!resultTableBody) return;
 
   if (!state.groupedRows.length) {
@@ -373,13 +370,14 @@ function renderResults() {
     });
   }
 
-  if (sumFiles) sumFiles.textContent = state.files.length;
-  if (sumRows) sumRows.textContent = state.parsedRows.length;
-  if (sumGroups) sumGroups.textContent = state.groupedRows.length;
-  if (sumIgnored) sumIgnored.textContent = state.ignoredRows.length;
+  setText('sumFiles', state.files.length);
+  setText('sumRows', state.parsedRows.length);
+  setText('sumGroups', state.groupedRows.length);
+  setText('sumIgnored', state.ignoredRows.length);
 }
 
 function renderIgnored() {
+  const ignoredTableBody = document.querySelector('#ignoredTable tbody');
   if (!ignoredTableBody) return;
 
   if (!state.ignoredRows.length) {
@@ -416,12 +414,12 @@ function handleEditResult(e) {
   }
 
   state.groupedRows[index][field] = value;
-  if (field !== 'descriptor') {
-    e.target.value = fmt(value);
-  }
+  if (field !== 'descriptor') e.target.value = fmt(value);
 }
 
 function addAliasRow(from = '', to = '') {
+  const aliasTemplate = document.getElementById('aliasRowTemplate');
+  const aliasGrid = document.getElementById('aliasGrid');
   if (!aliasTemplate || !aliasGrid) return;
 
   const node = aliasTemplate.content.firstElementChild.cloneNode(true);
@@ -432,6 +430,7 @@ function addAliasRow(from = '', to = '') {
 }
 
 function loadAliasExample() {
+  const aliasGrid = document.getElementById('aliasGrid');
   if (!aliasGrid) return;
   aliasGrid.innerHTML = '';
   addAliasRow('PA001', 'PA01');
@@ -501,13 +500,9 @@ function exportExcel() {
   }));
 
   const wb = XLSX.utils.book_new();
-  const wsResumen = XLSX.utils.json_to_sheet(resumen);
-  const wsDetalle = XLSX.utils.json_to_sheet(detalle);
-  const wsNoUtilizados = XLSX.utils.json_to_sheet(noUtilizados);
-
-  XLSX.utils.book_append_sheet(wb, wsResumen, 'Promedios');
-  XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle');
-  XLSX.utils.book_append_sheet(wb, wsNoUtilizados, 'NoUtilizados');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Promedios');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle), 'Detalle');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noUtilizados), 'NoUtilizados');
   XLSX.writeFile(wb, 'PA_PROMEDIADOS.xlsx');
 }
 
@@ -543,9 +538,7 @@ function exportGeoJSON() {
     name: 'PA_PROMEDIADOS',
     crs: {
       type: 'name',
-      properties: {
-        name: epsg,
-      },
+      properties: { name: epsg },
     },
     features: state.groupedRows.map(r => ({
       type: 'Feature',
@@ -565,11 +558,7 @@ function exportGeoJSON() {
     })),
   };
 
-  downloadFile(
-    'PA_PROMEDIADOS.geojson',
-    JSON.stringify(geojson, null, 2),
-    'application/geo+json;charset=utf-8'
-  );
+  downloadFile('PA_PROMEDIADOS.geojson', JSON.stringify(geojson, null, 2), 'application/geo+json;charset=utf-8');
 }
 
 async function exportSHP() {
@@ -596,9 +585,7 @@ async function exportSHP() {
   try {
     const response = await fetch('/api/export_shp_zm', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
@@ -626,10 +613,10 @@ function toggleIgnoredPanel() {
 
 function toggleAliasPanel() {
   const panel = document.getElementById('aliasPanel');
-  const btn = document.getElementById('btnToggleAliases');
+  const btn = document.getElementById('btnToggleAtributos');
   if (!panel || !btn) return;
   panel.hidden = !panel.hidden;
-  btn.textContent = panel.hidden ? 'Mostrar aliases' : 'Ocultar aliases';
+  btn.textContent = panel.hidden ? 'Mostrar Atributos' : 'Ocultar Atributos';
 }
 
 function downloadFile(filename, content, mime) {
@@ -654,6 +641,11 @@ function downloadBlob(filename, blob, mime = 'application/octet-stream') {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
 
 function fmt(value) {
