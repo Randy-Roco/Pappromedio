@@ -1,6 +1,5 @@
 from flask import Flask, request, send_file, jsonify
 import io
-import json
 import os
 import tempfile
 import zipfile
@@ -37,17 +36,15 @@ def export_shp_zm():
         with tempfile.TemporaryDirectory() as tmpdir:
             shp_base = os.path.join(tmpdir, layer_name)
 
-            # POINTZ => XY + Z + M
             writer = shapefile.Writer(shp_base, shapeType=shapefile.POINTZ)
             writer.autoBalance = 1
 
-            # Campos DBF (máx 10 caracteres recomendado)
-            writer.field("X", "F", decimal=4)
-            writer.field("Y", "F", decimal=4)
-            writer.field("Z", "F", decimal=4)
+            writer.field("X", "F", size=18, decimal=4)
+            writer.field("Y", "F", size=18, decimal=4)
+            writer.field("Z", "F", size=18, decimal=4)
             writer.field("DESCRIPTOR", "C", size=50)
             writer.field("OBSERV", "N", size=10, decimal=0)
-            writer.field("DELTAMAX", "F", decimal=4)
+            writer.field("DELTAMAX", "F", size=18, decimal=4)
             writer.field("CONTROL", "C", size=20)
 
             for row in rows:
@@ -59,7 +56,6 @@ def export_shp_zm():
                 delta_max = safe_float(row.get("maxRango", 0.0))
                 control = "ALERTA" if row.get("hasLargeSpread") else "OK"
 
-                # M: se deja en 0.0 para que la geometría sea ZM real
                 m_value = 0.0
 
                 writer.pointz(x, y, z, m_value)
@@ -75,11 +71,9 @@ def export_shp_zm():
 
             writer.close()
 
-            # .prj
             with open(f"{shp_base}.prj", "w", encoding="utf-8") as f:
                 f.write(prj_wkt)
 
-            # .cpg
             with open(f"{shp_base}.cpg", "w", encoding="utf-8") as f:
                 f.write("UTF-8")
 
