@@ -83,7 +83,9 @@ const sumRows = document.getElementById('sumRows');
 const sumGroups = document.getElementById('sumGroups');
 const sumIgnored = document.getElementById('sumIgnored');
 
-boot();
+document.addEventListener('DOMContentLoaded', () => {
+  boot();
+});
 
 function boot() {
   addAliasRow();
@@ -93,43 +95,50 @@ function boot() {
   renderIgnored();
 }
 
+function safeBind(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+}
+
 function bindEvents() {
-  dropzone.addEventListener('click', () => fileInput.click());
+  if (dropzone && fileInput) {
+    dropzone.addEventListener('click', () => fileInput.click());
 
-  fileInput.addEventListener('change', async (e) => {
-    await handleFiles([...e.target.files]);
-    e.target.value = '';
-  });
-
-  ['dragenter', 'dragover'].forEach(evt => {
-    dropzone.addEventListener(evt, (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
+    fileInput.addEventListener('change', async (e) => {
+      await handleFiles([...e.target.files]);
+      e.target.value = '';
     });
-  });
 
-  ['dragleave', 'drop'].forEach(evt => {
-    dropzone.addEventListener(evt, (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
     });
-  });
 
-  dropzone.addEventListener('drop', async (e) => {
-    await handleFiles([...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.txt')));
-  });
+    ['dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
 
-  document.getElementById('btnClearFiles').addEventListener('click', clearFiles);
-  document.getElementById('btnAddAlias').addEventListener('click', addAliasRow);
-  document.getElementById('btnLoadAliasExample').addEventListener('click', loadAliasExample);
-  document.getElementById('btnApply').addEventListener('click', processData);
-  document.getElementById('btnExportTxt').addEventListener('click', exportTxt);
-  document.getElementById('btnExportExcel').addEventListener('click', exportExcel);
-  document.getElementById('btnToggleIgnored').addEventListener('click', toggleIgnoredPanel);
-  document.getElementById('btnExportIgnoredCsv').addEventListener('click', exportIgnoredCsv);
-  document.getElementById('btnExportGeoJSON').addEventListener('click', exportGeoJSON);
-  document.getElementById('btnExportSHP').addEventListener('click', exportSHP);
-  document.getElementById('btnToggleAliases').addEventListener('click', toggleAliasPanel);
+    dropzone.addEventListener('drop', async (e) => {
+      await handleFiles([...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.txt')));
+    });
+  }
+
+  safeBind('btnClearFiles', 'click', clearFiles);
+  safeBind('btnAddAlias', 'click', addAliasRow);
+  safeBind('btnLoadAliasExample', 'click', loadAliasExample);
+  safeBind('btnApply', 'click', processData);
+  safeBind('btnExportTxt', 'click', exportTxt);
+  safeBind('btnExportExcel', 'click', exportExcel);
+  safeBind('btnToggleIgnored', 'click', toggleIgnoredPanel);
+  safeBind('btnExportIgnoredCsv', 'click', exportIgnoredCsv);
+  safeBind('btnExportGeoJSON', 'click', exportGeoJSON);
+  safeBind('btnExportSHP', 'click', exportSHP);
+  safeBind('btnToggleAliases', 'click', toggleAliasPanel);
 }
 
 async function handleFiles(fileList) {
@@ -321,6 +330,8 @@ function max(values) {
 }
 
 function renderFiles() {
+  if (!filesTableBody) return;
+
   if (!state.files.length) {
     filesTableBody.innerHTML = '<tr><td colspan="3" class="empty">Aún no hay archivos cargados.</td></tr>';
     return;
@@ -334,6 +345,8 @@ function renderFiles() {
 }
 
 function renderResults() {
+  if (!resultTableBody) return;
+
   if (!state.groupedRows.length) {
     resultTableBody.innerHTML = '<tr><td colspan="7" class="empty">No hay resultados todavía.</td></tr>';
   } else {
@@ -360,13 +373,15 @@ function renderResults() {
     });
   }
 
-  sumFiles.textContent = state.files.length;
-  sumRows.textContent = state.parsedRows.length;
-  sumGroups.textContent = state.groupedRows.length;
-  sumIgnored.textContent = state.ignoredRows.length;
+  if (sumFiles) sumFiles.textContent = state.files.length;
+  if (sumRows) sumRows.textContent = state.parsedRows.length;
+  if (sumGroups) sumGroups.textContent = state.groupedRows.length;
+  if (sumIgnored) sumIgnored.textContent = state.ignoredRows.length;
 }
 
 function renderIgnored() {
+  if (!ignoredTableBody) return;
+
   if (!state.ignoredRows.length) {
     ignoredTableBody.innerHTML = '<tr><td colspan="5" class="empty">No hay registros no utilizados.</td></tr>';
     return;
@@ -407,6 +422,8 @@ function handleEditResult(e) {
 }
 
 function addAliasRow(from = '', to = '') {
+  if (!aliasTemplate || !aliasGrid) return;
+
   const node = aliasTemplate.content.firstElementChild.cloneNode(true);
   node.querySelector('.alias-from').value = from;
   node.querySelector('.alias-to').value = to;
@@ -415,6 +432,7 @@ function addAliasRow(from = '', to = '') {
 }
 
 function loadAliasExample() {
+  if (!aliasGrid) return;
   aliasGrid.innerHTML = '';
   addAliasRow('PA001', 'PA01');
   addAliasRow('PA1', 'PA01');
@@ -560,85 +578,56 @@ async function exportSHP() {
     return;
   }
 
-  if (typeof shpwrite === 'undefined') {
-    alert('La librería @mapbox/shp-write no está cargada en index.html');
-    return;
-  }
-
-  if (typeof JSZip === 'undefined') {
-    alert('La librería JSZip no está cargada en index.html');
-    return;
-  }
-
   const epsg = document.getElementById('epsgSelect').value;
-  const layerName = 'PA_PROMEDIADOS';
 
-  const geojson = {
-    type: 'FeatureCollection',
-    features: state.groupedRows.map(r => ({
-      type: 'Feature',
-      properties: {
-        X: Number(r.X),
-        Y: Number(r.Y),
-        Z: Number(r.Z),
-        DESCRIPTOR: String(r.descriptor),
-        OBSERV: Number(r.count),
-        DELTA_MAX: Number(r.maxRango ?? 0),
-        CONTROL: r.hasLargeSpread ? 'ALERTA' : 'OK',
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [Number(r.X), Number(r.Y)],
-      },
+  const payload = {
+    epsg,
+    rows: state.groupedRows.map(r => ({
+      descriptor: r.descriptor,
+      X: Number(r.X),
+      Y: Number(r.Y),
+      Z: Number(r.Z),
+      count: Number(r.count),
+      maxRango: Number(r.maxRango ?? 0),
+      hasLargeSpread: Boolean(r.hasLargeSpread),
     })),
   };
 
   try {
-    const zipArrayBuffer = shpwrite.zip(geojson, {
-      folder: layerName,
-      filename: layerName,
-      outputType: 'arraybuffer',
-      types: {
-        point: layerName,
+    const response = await fetch('/api/export_shp_zm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      prj: getPrjWKT(epsg),
+      body: JSON.stringify(payload),
     });
 
-    const zip = await JSZip.loadAsync(zipArrayBuffer);
-    const innerFolder = zip.folder(layerName) || zip;
+    if (!response.ok) {
+      let message = 'No se pudo generar el shapefile.';
+      try {
+        const errorData = await response.json();
+        if (errorData?.error) message = errorData.error;
+      } catch (_) {}
+      throw new Error(message);
+    }
 
-    // Ayuda con codificación de texto en varios GIS
-    innerFolder.file(`${layerName}.cpg`, 'UTF-8');
-
-    const finalZip = await zip.generateAsync({
-      type: 'blob',
-      compression: 'STORE',
-    });
-
-    downloadBlob(`${layerName}.zip`, finalZip, 'application/zip');
-  } catch (err) {
-    console.error(err);
-    alert('No se pudo generar el shapefile ZIP. Revisa la consola del navegador.');
+    const blob = await response.blob();
+    downloadBlob('PA_PROMEDIADOS.zip', blob, 'application/zip');
+  } catch (error) {
+    console.error(error);
+    alert(`Error exportando SHP ZM: ${error.message}`);
   }
-}
-
-function getPrjWKT(epsg) {
-  const wkts = {
-    'EPSG:32718': 'PROJCS["WGS_1984_UTM_Zone_18S",GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["False_Easting",500000.0],PARAMETER["False_Northing",10000000.0],PARAMETER["Central_Meridian",-75.0],PARAMETER["Scale_Factor",0.9996],PARAMETER["Latitude_Of_Origin",0.0],UNIT["Meter",1.0]]',
-    'EPSG:32719': 'PROJCS["WGS_1984_UTM_Zone_19S",GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["False_Easting",500000.0],PARAMETER["False_Northing",10000000.0],PARAMETER["Central_Meridian",-69.0],PARAMETER["Scale_Factor",0.9996],PARAMETER["Latitude_Of_Origin",0.0],UNIT["Meter",1.0]]',
-  };
-
-  return wkts[epsg] || wkts['EPSG:32719'];
 }
 
 function toggleIgnoredPanel() {
   const panel = document.getElementById('ignoredPanel');
-  panel.hidden = !panel.hidden;
+  if (panel) panel.hidden = !panel.hidden;
 }
 
 function toggleAliasPanel() {
   const panel = document.getElementById('aliasPanel');
   const btn = document.getElementById('btnToggleAliases');
+  if (!panel || !btn) return;
   panel.hidden = !panel.hidden;
   btn.textContent = panel.hidden ? 'Mostrar aliases' : 'Ocultar aliases';
 }
