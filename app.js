@@ -401,7 +401,9 @@ function handleEditResult(e) {
   }
 
   state.groupedRows[index][field] = value;
-  if (field !== 'descriptor') e.target.value = fmt(value);
+  if (field !== 'descriptor') {
+    e.target.value = fmt(value);
+  }
 }
 
 function addAliasRow(from = '', to = '') {
@@ -530,15 +532,13 @@ function exportGeoJSON() {
     features: state.groupedRows.map(r => ({
       type: 'Feature',
       properties: {
-        descriptor: r.descriptor,
-        z: Number(r.Z),
-        observ: Number(r.count),
-        origen: r.origen,
-        rango_x: Number(r.rangoX ?? 0),
-        rango_y: Number(r.rangoY ?? 0),
-        rango_z: Number(r.rangoZ ?? 0),
-        delta_max: Number(r.maxRango ?? 0),
-        control: r.hasLargeSpread ? r.alerta : 'OK',
+        X: Number(r.X),
+        Y: Number(r.Y),
+        Z: Number(r.Z),
+        DESCRIPTOR: String(r.descriptor),
+        OBSERV: Number(r.count),
+        DELTA_MAX: Number(r.maxRango ?? 0),
+        CONTROL: r.hasLargeSpread ? 'ALERTA' : 'OK',
       },
       geometry: {
         type: 'Point',
@@ -547,34 +547,44 @@ function exportGeoJSON() {
     })),
   };
 
-  downloadFile('PA_PROMEDIADOS.geojson', JSON.stringify(geojson, null, 2), 'application/geo+json;charset=utf-8');
+  downloadFile(
+    'PA_PROMEDIADOS.geojson',
+    JSON.stringify(geojson, null, 2),
+    'application/geo+json;charset=utf-8'
+  );
 }
 
-function exportSHP() {
+async function exportSHP() {
   if (!state.groupedRows.length) {
     alert('No hay resultados para exportar.');
     return;
   }
 
   if (typeof shpwrite === 'undefined') {
-    alert('La librería shp-write no está cargada en index.html');
+    alert('La librería @mapbox/shp-write no está cargada en index.html');
+    return;
+  }
+
+  if (typeof JSZip === 'undefined') {
+    alert('La librería JSZip no está cargada en index.html');
     return;
   }
 
   const epsg = document.getElementById('epsgSelect').value;
+  const layerName = 'PA_PROMEDIADOS';
 
   const geojson = {
     type: 'FeatureCollection',
     features: state.groupedRows.map(r => ({
       type: 'Feature',
       properties: {
-        descriptor: r.descriptor,
-        z: Number(r.Z),
-        observ: Number(r.count),
-        rango_x: Number(r.rangoX ?? 0),
-        rango_y: Number(r.rangoY ?? 0),
-        rango_z: Number(r.rangoZ ?? 0),
-        delta_max: Number(r.maxRango ?? 0),
+        X: Number(r.X),
+        Y: Number(r.Y),
+        Z: Number(r.Z),
+        DESCRIPTOR: String(r.descriptor),
+        OBSERV: Number(r.count),
+        DELTA_MAX: Number(r.maxRango ?? 0),
+        CONTROL: r.hasLargeSpread ? 'ALERTA' : 'OK',
       },
       geometry: {
         type: 'Point',
@@ -583,14 +593,33 @@ function exportSHP() {
     })),
   };
 
-  shpwrite.download(geojson, {
-    folder: 'PA_PROMEDIADOS_SHP',
-    file: 'PA_PROMEDIADOS',
-    types: {
-      point: 'PA_PROMEDIADOS',
-    },
-    prj: getPrjWKT(epsg),
-  });
+  try {
+    const zipArrayBuffer = shpwrite.zip(geojson, {
+      folder: layerName,
+      filename: layerName,
+      outputType: 'arraybuffer',
+      types: {
+        point: layerName,
+      },
+      prj: getPrjWKT(epsg),
+    });
+
+    const zip = await JSZip.loadAsync(zipArrayBuffer);
+    const innerFolder = zip.folder(layerName) || zip;
+
+    // Ayuda con codificación de texto en varios GIS
+    innerFolder.file(`${layerName}.cpg`, 'UTF-8');
+
+    const finalZip = await zip.generateAsync({
+      type: 'blob',
+      compression: 'STORE',
+    });
+
+    downloadBlob(`${layerName}.zip`, finalZip, 'application/zip');
+  } catch (err) {
+    console.error(err);
+    alert('No se pudo generar el shapefile ZIP. Revisa la consola del navegador.');
+  }
 }
 
 function getPrjWKT(epsg) {
@@ -617,6 +646,18 @@ function toggleAliasPanel() {
 function downloadFile(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadBlob(filename, blob, mime = 'application/octet-stream') {
+  const realBlob = blob instanceof Blob ? blob : new Blob([blob], { type: mime });
+  const url = URL.createObjectURL(realBlob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
