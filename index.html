@@ -84,11 +84,11 @@
               </select>
             </label>
 
-            <button class="secondary-btn" id="btnToggleAliases">Mostrar aliases</button>
+            <button class="secondary-btn" id="btnToggleAliases">Mostrar Atributos</button>
             <button class="primary-btn" id="btnExportExcel">Exportar Excel</button>
             <button class="primary-btn" id="btnExportTxt">Exportar TXT</button>
             <button class="primary-btn" id="btnExportGeoJSON">Exportar GeoJSON</button>
-            <button class="primary-btn" id="btnExportSHP">Exportar SHP</button>
+            <button class="primary-btn" id="btnExportSHP">Exportar SHP (.ZIP)</button>
           </div>
         </div>
 
@@ -107,14 +107,14 @@
         <div id="aliasPanel" class="subpanel" hidden>
           <div class="subpanel-header">
             <div>
-              <h3>Aliases de descriptores</h3>
+              <h3>Atributos de descriptores</h3>
               <p>
                 Agrupa variantes digitadas por operador. Ejemplo:
                 <code>PA001</code> → <code>PA01</code>
               </p>
             </div>
             <div class="toolbar">
-              <button class="ghost-btn" id="btnAddAlias">Agregar alias</button>
+              <button class="ghost-btn" id="btnAddAlias">Agregar atributo</button>
               <button class="ghost-btn" id="btnLoadAliasExample">Cargar ejemplo</button>
               <button class="secondary-btn" id="btnApply">Procesar y promediar</button>
             </div>
@@ -188,7 +188,7 @@
     </div>
   </template>
 
-  <script src="https://unpkg.com/shp-write@0.3.2/shpwrite.js"></script>
-  <script src="app.js"></script>
+  <script src="https://unpkg.com/@mapbox/shp-write@latest/shpwrite.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
